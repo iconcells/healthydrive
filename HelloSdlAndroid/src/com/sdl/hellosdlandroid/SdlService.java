@@ -1,21 +1,12 @@
 package com.sdl.hellosdlandroid;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import android.app.Service;
-import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
 import com.smartdevicelink.exception.SdlException;
 import com.smartdevicelink.exception.SdlExceptionCause;
-import com.smartdevicelink.protocol.enums.FunctionID;
 import com.smartdevicelink.proxy.RPCRequest;
 import com.smartdevicelink.proxy.SdlProxyALM;
 import com.smartdevicelink.proxy.callbacks.OnServiceEnded;
@@ -59,7 +50,6 @@ import com.smartdevicelink.proxy.rpc.OnTouchEvent;
 import com.smartdevicelink.proxy.rpc.OnVehicleData;
 import com.smartdevicelink.proxy.rpc.PerformAudioPassThruResponse;
 import com.smartdevicelink.proxy.rpc.PerformInteractionResponse;
-import com.smartdevicelink.proxy.rpc.PermissionItem;
 import com.smartdevicelink.proxy.rpc.PutFile;
 import com.smartdevicelink.proxy.rpc.PutFileResponse;
 import com.smartdevicelink.proxy.rpc.ReadDIDResponse;
@@ -83,8 +73,16 @@ import com.smartdevicelink.proxy.rpc.UnsubscribeVehicleDataResponse;
 import com.smartdevicelink.proxy.rpc.UpdateTurnListResponse;
 import com.smartdevicelink.proxy.rpc.enums.FileType;
 import com.smartdevicelink.proxy.rpc.enums.HMILevel;
+import com.smartdevicelink.proxy.rpc.enums.LockScreenStatus;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class SdlService extends Service implements IProxyListenerALM{
 
@@ -111,6 +109,8 @@ public class SdlService extends Service implements IProxyListenerALM{
 
 	// variable to create and call functions of the SyncProxy
 	private SdlProxyALM proxy = null;
+
+	private boolean lockscreenDisplayed = false;
 
 	private boolean firstNonHmiNone = true;
 	private boolean isVehicleDataSubscribed = false;
@@ -247,7 +247,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	 */
 	private void sendIcon() throws SdlException {
 		iconCorrelationId = autoIncCorrId++;
-		uploadImage(R.drawable.ic_launcher,ICON_FILENAME,iconCorrelationId, true);
+		uploadImage(R.drawable.ic_launcher, ICON_FILENAME, iconCorrelationId, true);
 	}
 	
 	/**
@@ -319,6 +319,9 @@ public class SdlService extends Service implements IProxyListenerALM{
 				reset();
 			}
 		}
+
+		clearLockScreen();
+
 		stopSelf();
 	}
 
@@ -417,9 +420,24 @@ public class SdlService extends Service implements IProxyListenerALM{
 	
 	@Override
 	public void onOnLockScreenNotification(OnLockScreenStatus notification) {
-		// TODO Auto-generated method stub
-
+		if(!lockscreenDisplayed && notification.getShowLockScreen() == LockScreenStatus.REQUIRED){
+			// Show lock screen
+			Intent intent = new Intent(getApplicationContext(), LockScreenActivity.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY|Intent.FLAG_ACTIVITY_NEW_TASK);
+            lockscreenDisplayed = true;
+			startActivity(intent);
+		} else if(lockscreenDisplayed && notification.getShowLockScreen() != LockScreenStatus.REQUIRED){
+			// Clear lock screen
+			clearLockScreen();
+		}
 	}
+
+    private void clearLockScreen() {
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY|Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        lockscreenDisplayed = false;
+    }
 
 	@Override
 	public void onOnCommand(OnCommand notification){
