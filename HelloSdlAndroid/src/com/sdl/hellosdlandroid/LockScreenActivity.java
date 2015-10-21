@@ -11,4 +11,7 @@ public class LockScreenActivity extends Activity {
         setContentView(R.layout.activity_lock_screen);
     }
 
+    @Override
+    public void onBackPressed() {
+    }
 }
