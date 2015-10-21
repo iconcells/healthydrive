@@ -2,7 +2,9 @@ package com.sdl.hellosdlandroid;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
 import com.smartdevicelink.exception.SdlException;
@@ -101,7 +103,11 @@ public class SdlService extends Service implements IProxyListenerALM{
 	
 	private static final String TEST_COMMAND_NAME 		= "Test Command";
 	private static final int TEST_COMMAND_ID 			= 1;
-	
+
+    // Conenction management
+	private static final int CONNECTION_TIMEOUT = 180 * 1000;
+    private Handler mConnectionHandler = new Handler(Looper.getMainLooper());
+
 	// variable used to increment correlation ID for every request sent to SYNC
 	public int autoIncCorrId = 0;
 	// variable to contain the current state of the service
@@ -124,17 +130,17 @@ public class SdlService extends Service implements IProxyListenerALM{
 
 	@Override
 	public void onCreate() {
+        Log.d(TAG, "onCreate");
 		super.onCreate();
 		instance = this;
-		remoteFiles = new ArrayList<String>();
+		remoteFiles = new ArrayList<>();
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		if (intent != null) {
-			startProxy();
+        startProxy();
 
-		}
+        mConnectionHandler.postDelayed(mCheckConnectionRunnable, CONNECTION_TIMEOUT);
 
 		return START_STICKY;
 	}
@@ -156,8 +162,11 @@ public class SdlService extends Service implements IProxyListenerALM{
 	}
 
 	public void startProxy() {
+
+        Log.i(TAG, "Trying to start proxy");
 		if (proxy == null) {
 			try {
+                Log.i(TAG, "Starting SDL Proxy");
 				proxy = new SdlProxyALM(this, APP_NAME, true, APP_ID);
 			} catch (SdlException e) {
 				e.printStackTrace();
@@ -347,10 +356,9 @@ public class SdlService extends Service implements IProxyListenerALM{
 			//We have HMI_NONE
 			if(notification.getFirstRun()){
 				uploadImages();
+                mConnectionHandler.removeCallbacksAndMessages(null);
 			}
 		}
-		
-		
 		
 	}
 	
@@ -457,7 +465,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	 */
 	@Override
 	public void onAddCommandResponse(AddCommandResponse response) {
-		Log.i(TAG, "AddCommand response from SDL: " + response);
+		Log.i(TAG, "AddCommand response from SDL: " + response.getResultCode().name());
 
 	}
 
@@ -787,5 +795,12 @@ public class SdlService extends Service implements IProxyListenerALM{
 	public void onGenericResponse(GenericResponse response) {
 		// TODO Auto-generated method stub
 	}
+
+	private Runnable mCheckConnectionRunnable = new Runnable() {
+		@Override
+		public void run() {
+            stopSelf();
+		}
+	};
 
 }
