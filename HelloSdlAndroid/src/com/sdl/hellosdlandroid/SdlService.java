@@ -284,17 +284,17 @@ public class SdlService extends Service implements IProxyListenerALM{
 	
 	/**
 	 * Helper method to take resource files and turn them into byte arrays
-	 * @param resource
-	 * @return
+	 * @param resource Resource file id.
+	 * @return Resulting byte array.
 	 */
 	private byte[] contentsOfResource(int resource) {
 		InputStream is = null;
 		try {
 			is = getResources().openRawResource(resource);
 			ByteArrayOutputStream os = new ByteArrayOutputStream(is.available());
-			final int buffersize = 4096;
-			final byte[] buffer = new byte[buffersize];
-			int available = 0;
+			final int bufferSize = 4096;
+			final byte[] buffer = new byte[bufferSize];
+			int available;
 			while ((available = is.read(buffer)) >= 0) {
 				os.write(buffer, 0, available);
 			}
@@ -416,7 +416,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	@Override
 	public void onPutFileResponse(PutFileResponse response) {
 		Log.i(TAG, "onPutFileResponse from SDL");
-		if(response.getCorrelationID().intValue() == iconCorrelationId){ //If we have successfully uploaded our icon, we want to set it
+		if(response.getCorrelationID() == iconCorrelationId){ //If we have successfully uploaded our icon, we want to set it
 			try {
 				proxy.setappicon(ICON_FILENAME, autoIncCorrId++);
 			} catch (SdlException e) {
@@ -514,270 +514,268 @@ public class SdlService extends Service implements IProxyListenerALM{
 	
 	@Override
 	public void onAddSubMenuResponse(AddSubMenuResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "AddSubMenu response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onCreateInteractionChoiceSetResponse(CreateInteractionChoiceSetResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "CreateInteractionChoiceSet response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onAlertResponse(AlertResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "Alert response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onDeleteCommandResponse(DeleteCommandResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "DeleteCommand response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onDeleteInteractionChoiceSetResponse(DeleteInteractionChoiceSetResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "DeleteInteractionChoiceSet response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onDeleteSubMenuResponse(DeleteSubMenuResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "DeleteSubMenu response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onPerformInteractionResponse(PerformInteractionResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "PerformInteraction response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onResetGlobalPropertiesResponse(
 			ResetGlobalPropertiesResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "ResetGlobalProperties response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onSetGlobalPropertiesResponse(SetGlobalPropertiesResponse response) {
+        Log.i(TAG, "SetGlobalProperties response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onSetMediaClockTimerResponse(SetMediaClockTimerResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "SetMediaClockTimer response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onShowResponse(ShowResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "Show response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onSpeakResponse(SpeakResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "SpeakCommand response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onOnButtonEvent(OnButtonEvent notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnButtonEvent notification from SDL: " + notification);
 	}
 
 	@Override
 	public void onOnButtonPress(OnButtonPress notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnButtonPress notification from SDL: " + notification);
 	}
 
 	@Override
 	public void onSubscribeButtonResponse(SubscribeButtonResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "SubscribeButton response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	@Override
 	public void onUnsubscribeButtonResponse(UnsubscribeButtonResponse response) {
-		// TODO Auto-generated method stub	
+        Log.i(TAG, "UnsubscribeButton response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 
 	@Override
 	public void onOnTBTClientState(OnTBTClientState notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnTBTClientState notification from SDL: " + notification);
 	}
 
 	@Override
 	public void onUnsubscribeVehicleDataResponse(
 			UnsubscribeVehicleDataResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "UnsubscribeVehicleData response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onGetVehicleDataResponse(GetVehicleDataResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "GetVehicleData response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onReadDIDResponse(ReadDIDResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "ReadDID response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onGetDTCsResponse(GetDTCsResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "GetDTCs response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 
 	@Override
 	public void onPerformAudioPassThruResponse(PerformAudioPassThruResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "PerformAudioPassThru response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onEndAudioPassThruResponse(EndAudioPassThruResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "EndAudioPassThru response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onOnAudioPassThru(OnAudioPassThru notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnAudioPassThru notification from SDL: " + notification );
 
 	}
 
 	@Override
 	public void onDeleteFileResponse(DeleteFileResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "DeleteFile response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onSetAppIconResponse(SetAppIconResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "SetAppIcon response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onScrollableMessageResponse(ScrollableMessageResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "ScrollableMessage response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onChangeRegistrationResponse(ChangeRegistrationResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "ChangeRegistration response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onSetDisplayLayoutResponse(SetDisplayLayoutResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "SetDisplayLayout response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onOnLanguageChange(OnLanguageChange notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnLanguageChange notification from SDL: " + notification);
 
 	}
 
 	@Override
 	public void onSliderResponse(SliderResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "Slider response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 
 	@Override
 	public void onOnHashChange(OnHashChange notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnHashChange notification from SDL: " + notification);
 
 	}
 
 	@Override
 	public void onOnSystemRequest(OnSystemRequest notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnSystemRequest notification from SDL: " + notification);
 
 	}
 
 	@Override
 	public void onSystemRequestResponse(SystemRequestResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "SystemRequest response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onOnKeyboardInput(OnKeyboardInput notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnKeyboardInput notification from SDL: " + notification);
 
 	}
 
 	@Override
 	public void onOnTouchEvent(OnTouchEvent notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnTouchEvent notification from SDL: " + notification);
 
 	}
 
 	@Override
 	public void onDiagnosticMessageResponse(DiagnosticMessageResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "DiagnosticMessage response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onOnStreamRPC(OnStreamRPC notification) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "OnStreamRPC notification from SDL: " + notification);
 
 	}
 
 	@Override
 	public void onStreamRPCResponse(StreamRPCResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "StreamRPC response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onDialNumberResponse(DialNumberResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "DialNumber response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onSendLocationResponse(SendLocationResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "SendLocation response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onServiceEnded(OnServiceEnded serviceEnded) {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void onServiceNACKed(OnServiceNACKed serviceNACKed) {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void onShowConstantTbtResponse(ShowConstantTbtResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "ShowConstantTbt response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onAlertManeuverResponse(AlertManeuverResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "AlertManeuver response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onUpdateTurnListResponse(UpdateTurnListResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "UpdateTurnList response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 
 	}
 
 	@Override
 	public void onServiceDataACK() {
-		// TODO Auto-generated method stub
 
 	}
 	
@@ -788,12 +786,11 @@ public class SdlService extends Service implements IProxyListenerALM{
 
 	@Override
 	public void onError(String info, Exception e) {
-		// TODO Auto-generated method stub
 	}
 
 	@Override
 	public void onGenericResponse(GenericResponse response) {
-		// TODO Auto-generated method stub
+        Log.i(TAG, "Generic response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
 
 	private Runnable mCheckConnectionRunnable = new Runnable() {
