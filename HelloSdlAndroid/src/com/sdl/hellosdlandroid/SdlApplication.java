@@ -14,6 +14,9 @@ public class SdlApplication extends Application{
     @Override
     public void onCreate() {
         super.onCreate();
+
+        LockScreenActivity.registerActivityLifecycle(this);
+
         mInstance = this;
         Intent proxyIntent = new Intent(this, SdlService.class);
         startService(proxyIntent);

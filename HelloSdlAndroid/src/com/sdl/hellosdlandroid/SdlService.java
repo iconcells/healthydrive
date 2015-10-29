@@ -116,8 +116,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 	// variable to create and call functions of the SyncProxy
 	private SdlProxyALM proxy = null;
 
-	private boolean lockscreenDisplayed = false;
-
 	private boolean firstNonHmiNone = true;
 	private boolean isVehicleDataSubscribed = false;
 	
@@ -148,7 +146,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 	@Override
 	public void onDestroy() {
 		disposeSyncProxy();
-		//LockScreenManager.clearLockScreen();
 		instance = null;
 		super.onDestroy();
 	}
@@ -179,6 +176,8 @@ public class SdlService extends Service implements IProxyListenerALM{
 	}
 
 	public void disposeSyncProxy() {
+		LockScreenActivity.updateLockScreenStatus(LockScreenStatus.OFF);
+
 		if (proxy != null) {
 			try {
 				proxy.dispose();
@@ -186,7 +185,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 				e.printStackTrace();
 			}
 			proxy = null;
-			//LockScreenManager.clearLockScreen();
+
 		}
 		this.firstNonHmiNone = true;
 		this.isVehicleDataSubscribed = false;
@@ -329,7 +328,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 			}
 		}
 
-		clearLockScreen();
 
 		stopSelf();
 	}
@@ -428,24 +426,8 @@ public class SdlService extends Service implements IProxyListenerALM{
 	
 	@Override
 	public void onOnLockScreenNotification(OnLockScreenStatus notification) {
-		if(!lockscreenDisplayed && notification.getShowLockScreen() == LockScreenStatus.REQUIRED){
-			// Show lock screen
-			Intent intent = new Intent(getApplicationContext(), LockScreenActivity.class);
-			intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY|Intent.FLAG_ACTIVITY_NEW_TASK);
-            lockscreenDisplayed = true;
-			startActivity(intent);
-		} else if(lockscreenDisplayed && notification.getShowLockScreen() != LockScreenStatus.REQUIRED){
-			// Clear lock screen
-			clearLockScreen();
-		}
+		LockScreenActivity.updateLockScreenStatus(notification.getShowLockScreen());
 	}
-
-    private void clearLockScreen() {
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY|Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-        lockscreenDisplayed = false;
-    }
 
 	@Override
 	public void onOnCommand(OnCommand notification){
