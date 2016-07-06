@@ -84,6 +84,7 @@ import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
 import com.smartdevicelink.transport.MultiplexTransportConfig;
 import com.smartdevicelink.transport.TransportConstants;
+import com.smartdevicelink.util.CorrelationIdGenerator;
 
 public class SdlService extends Service implements IProxyListenerALM{
 
@@ -102,10 +103,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 	
 	private static final String TEST_COMMAND_NAME 		= "Test Command";
 	private static final int TEST_COMMAND_ID 			= 1;
-
-
-	// variable used to increment correlation ID for every request sent to SYNC
-	public int autoIncCorrId = 0;
 
 	// variable to create and call functions of the SyncProxy
 	private SdlProxyALM proxy = null;
@@ -186,8 +183,8 @@ public class SdlService extends Service implements IProxyListenerALM{
 	 */
 	public void showTest(){
 		try {
-			proxy.show(TEST_COMMAND_NAME, "Command has been selected", TextAlignment.CENTERED, autoIncCorrId++);			
-			proxy.speak(TEST_COMMAND_NAME, autoIncCorrId++);
+			proxy.show(TEST_COMMAND_NAME, "Command has been selected", TextAlignment.CENTERED, CorrelationIdGenerator.generateId());			
+			proxy.speak(TEST_COMMAND_NAME, CorrelationIdGenerator.generateId());
 		} catch (SdlException e) {
 			e.printStackTrace();
 		}
@@ -212,7 +209,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	 * @param request
 	 */
 	private void sendRpcRequest(RPCRequest request){
-		request.setCorrelationID(autoIncCorrId++);
+		request.setCorrelationID(CorrelationIdGenerator.generateId());
 		try {
 			proxy.sendRPCRequest(request);
 		} catch (SdlException e) {
@@ -224,7 +221,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	 * @throws SdlException
 	 */
 	private void sendIcon() throws SdlException {
-		iconCorrelationId = autoIncCorrId++;
+		iconCorrelationId = CorrelationIdGenerator.generateId();
 		uploadImage(R.drawable.ic_launcher, ICON_FILENAME, iconCorrelationId, true);
 	}
 	
@@ -320,10 +317,10 @@ public class SdlService extends Service implements IProxyListenerALM{
 	private void performWelcomeMessage(){
 		try {
 			//Set the welcome message on screen
-			proxy.show(APP_NAME, WELCOME_SHOW, TextAlignment.CENTERED, autoIncCorrId++);
+			proxy.show(APP_NAME, WELCOME_SHOW, TextAlignment.CENTERED, CorrelationIdGenerator.generateId());
 			
 			//Say the welcome message
-			proxy.speak(WELCOME_SPEAK, autoIncCorrId++);
+			proxy.speak(WELCOME_SPEAK, CorrelationIdGenerator.generateId());
 			
 		} catch (SdlException e) {
 			e.printStackTrace();
@@ -358,7 +355,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 		}else{
 			// If the file is already present, send the SetAppIcon request
 			try {
-				proxy.setappicon(ICON_FILENAME, autoIncCorrId++);
+				proxy.setappicon(ICON_FILENAME, CorrelationIdGenerator.generateId());
 			} catch (SdlException e) {
 				e.printStackTrace();
 			}
@@ -370,7 +367,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 		Log.i(TAG, "onPutFileResponse from SDL");
 		if(response.getCorrelationID() == iconCorrelationId){ //If we have successfully uploaded our icon, we want to set it
 			try {
-				proxy.setappicon(ICON_FILENAME, autoIncCorrId++);
+				proxy.setappicon(ICON_FILENAME, CorrelationIdGenerator.generateId());
 			} catch (SdlException e) {
 				e.printStackTrace();
 			}
