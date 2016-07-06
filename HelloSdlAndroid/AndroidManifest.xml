@@ -34,11 +34,17 @@
 
         <service android:name="com.sdl.hellosdlandroid.SdlService" >
         </service>
-
+ 		<service
+            android:name="com.sdl.hellosdlandroid.SdlRouterService"
+            android:exported="true" 
+             android:process="com.smartdevicelink.router">
+        </service>
         <receiver android:name="com.sdl.hellosdlandroid.SdlReceiver" >
             <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
-                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
+                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+                <action android:name="sdl.router.startservice" />
             </intent-filter>
         </receiver>
     </application>

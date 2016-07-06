@@ -1,14 +1,18 @@
 package com.sdl.hellosdlandroid;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import android.app.Service;
 import android.content.Intent;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
 
 import com.smartdevicelink.exception.SdlException;
-import com.smartdevicelink.exception.SdlExceptionCause;
 import com.smartdevicelink.proxy.RPCRequest;
 import com.smartdevicelink.proxy.SdlProxyALM;
 import com.smartdevicelink.proxy.callbacks.OnServiceEnded;
@@ -78,13 +82,8 @@ import com.smartdevicelink.proxy.rpc.enums.HMILevel;
 import com.smartdevicelink.proxy.rpc.enums.LockScreenStatus;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.smartdevicelink.transport.MultiplexTransportConfig;
+import com.smartdevicelink.transport.TransportConstants;
 
 public class SdlService extends Service implements IProxyListenerALM{
 
@@ -104,14 +103,9 @@ public class SdlService extends Service implements IProxyListenerALM{
 	private static final String TEST_COMMAND_NAME 		= "Test Command";
 	private static final int TEST_COMMAND_ID 			= 1;
 
-    // Conenction management
-	private static final int CONNECTION_TIMEOUT = 180 * 1000;
-    private Handler mConnectionHandler = new Handler(Looper.getMainLooper());
 
 	// variable used to increment correlation ID for every request sent to SYNC
 	public int autoIncCorrId = 0;
-	// variable to contain the current state of the service
-	private static SdlService instance = null;
 
 	// variable to create and call functions of the SyncProxy
 	private SdlProxyALM proxy = null;
@@ -130,15 +124,14 @@ public class SdlService extends Service implements IProxyListenerALM{
 	public void onCreate() {
         Log.d(TAG, "onCreate");
 		super.onCreate();
-		instance = this;
-		remoteFiles = new ArrayList<>();
+		remoteFiles = new ArrayList<String>();
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-        startProxy();
-
-        mConnectionHandler.postDelayed(mCheckConnectionRunnable, CONNECTION_TIMEOUT);
+		//Check if this was started with a flag to force a transport connect
+		boolean forced = intent !=null && intent.getBooleanExtra(TransportConstants.FORCE_TRANSPORT_CONNECTED, false);
+        startProxy(forced);
 
 		return START_STICKY;
 	}
@@ -146,25 +139,19 @@ public class SdlService extends Service implements IProxyListenerALM{
 	@Override
 	public void onDestroy() {
 		disposeSyncProxy();
-		instance = null;
 		super.onDestroy();
-	}
-
-	public static SdlService getInstance() {
-		return instance;
 	}
 
 	public SdlProxyALM getProxy() {
 		return proxy;
 	}
 
-	public void startProxy() {
-
+	public void startProxy(boolean forceConnect) {
         Log.i(TAG, "Trying to start proxy");
 		if (proxy == null) {
 			try {
                 Log.i(TAG, "Starting SDL Proxy");
-				proxy = new SdlProxyALM(this, APP_NAME, true, APP_ID);
+				proxy = new SdlProxyALM(this, APP_NAME, true, APP_ID,new MultiplexTransportConfig(getBaseContext(), APP_ID));
 			} catch (SdlException e) {
 				e.printStackTrace();
 				// error creating proxy, returned proxy = null
@@ -172,6 +159,8 @@ public class SdlService extends Service implements IProxyListenerALM{
 					stopSelf();
 				}
 			}
+		}else if(forceConnect){
+			proxy.forceOnConnected();
 		}
 	}
 
@@ -190,25 +179,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 		this.firstNonHmiNone = true;
 		this.isVehicleDataSubscribed = false;
 		
-	}
-
-	public void reset() {
-		if (proxy != null) {
-			try {
-				proxy.resetProxy();
-				this.firstNonHmiNone = true;
-				this.isVehicleDataSubscribed = false;
-			} catch (SdlException e1) {
-				e1.printStackTrace();
-				//something goes wrong, & the proxy returns as null, stop the service.
-				// do not want a running service with a null proxy
-				if (proxy == null) {
-					stopSelf();
-				}
-			}
-		} else {
-			startProxy();
-		}
 	}
 
 	/**
@@ -314,21 +284,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 
 	@Override
 	public void onProxyClosed(String info, Exception e, SdlDisconnectedReason reason) {
-
-		if(!(e instanceof SdlException)){
-			Log.v(TAG, "reset proxy in onproxy closed");
-			reset();
-		}
-		else if ((((SdlException) e).getSdlExceptionCause() != SdlExceptionCause.SDL_PROXY_CYCLED))
-		{
-			if (((SdlException) e).getSdlExceptionCause() != SdlExceptionCause.BLUETOOTH_DISABLED) 
-			{
-				Log.v(TAG, "reset proxy in onproxy closed");
-				reset();
-			}
-		}
-
-
 		stopSelf();
 	}
 
@@ -354,7 +309,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 			//We have HMI_NONE
 			if(notification.getFirstRun()){
 				uploadImages();
-                mConnectionHandler.removeCallbacksAndMessages(null);
 			}
 		}
 		
@@ -774,12 +728,5 @@ public class SdlService extends Service implements IProxyListenerALM{
 	public void onGenericResponse(GenericResponse response) {
         Log.i(TAG, "Generic response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
 	}
-
-	private Runnable mCheckConnectionRunnable = new Runnable() {
-		@Override
-		public void run() {
-            stopSelf();
-		}
-	};
 
 }
