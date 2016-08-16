@@ -5,14 +5,11 @@ import android.content.Intent;
 import android.util.Log;
 
 import com.smartdevicelink.transport.SdlBroadcastReceiver;
+import com.smartdevicelink.transport.SdlRouterService;
 
 public class SdlReceiver  extends SdlBroadcastReceiver {		
 	private static final String TAG = "SdlBroadcastReciever";
 	
-	@Override
-	public Class defineLocalSdlRouterClass() {
-		return com.sdl.hellosdlandroid.SdlRouterService.class;
-	}
 
 	@Override
 	public void onSdlEnabled(Context context, Intent intent) {
@@ -21,4 +18,12 @@ public class SdlReceiver  extends SdlBroadcastReceiver {
 		context.startService(intent);
 		
 	}
+
+
+	@Override
+	public Class<? extends SdlRouterService> defineLocalSdlRouterClass() {
+		return com.sdl.hellosdlandroid.SdlRouterService.class;
+	}
+
+
 }
