@@ -237,7 +237,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	 */
 	private void sendIcon() throws SdlException {
 		iconCorrelationId = CorrelationIdGenerator.generateId();
-		uploadImage(R.drawable.ic_launcher, ICON_FILENAME, iconCorrelationId, true);
+		uploadImage(R.mipmap.ic_launcher, ICON_FILENAME, iconCorrelationId, true);
 	}
 	
 	/**
