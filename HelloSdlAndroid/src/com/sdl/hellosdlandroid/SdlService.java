@@ -83,6 +83,7 @@ import com.smartdevicelink.proxy.rpc.enums.FileType;
 import com.smartdevicelink.proxy.rpc.enums.HMILevel;
 import com.smartdevicelink.proxy.rpc.enums.ImageType;
 import com.smartdevicelink.proxy.rpc.enums.LockScreenStatus;
+import com.smartdevicelink.proxy.rpc.enums.RequestType;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
 import com.smartdevicelink.proxy.rpc.listeners.OnRPCResponseListener;
@@ -122,9 +123,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	private boolean firstNonHmiNone = true;
 	private boolean isVehicleDataSubscribed = false;
 
-	// Can replace this URL with your own image URL
-	private final String lockScreenImageUrl = "https://media.ford.com/content/dam/fordmedia/North%20America/US/2016/06/9/sdl-logo.png/_jcr_content/renditions/cq5dam.web.1024.768.png";
-	private Bitmap lockScreenImage = null;
+	private String lockScreenUrlFromCore = null;
 	private LockScreenManager lockScreenManager = new LockScreenManager();
 
 	@Override
@@ -334,15 +333,14 @@ public class SdlService extends Service implements IProxyListenerALM{
 		@Override
 		public void onLockScreenIconDownloaded(Bitmap icon) {
 			Log.i(TAG, "Lock screen icon downloaded successfully");
-			lockScreenImage = icon;
 			LockScreenActivity.updateLockScreenImage(icon);
 		}
 
 		@Override
 		public void onLockScreenIconDownloadError(Exception e) {
-			Log.e(TAG, "Couldn't download lock screen icon.");
-			lockScreenImage = BitmapFactory.decodeResource(getResources(),
-					R.drawable.sdl);
+			Log.e(TAG, "Couldn't download lock screen icon, resorting to default.");
+			LockScreenActivity.updateLockScreenImage(BitmapFactory.decodeResource(getResources(),
+					R.drawable.sdl));
 		}
 	}
 	
@@ -460,9 +458,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 	@Override
 	public void onOnPermissionsChange(OnPermissionsChange notification) {
 		Log.i(TAG, "Permision changed: " + notification);
-		if(lockScreenImage == null){
-			lockScreenManager.downloadLockScreenIcon(lockScreenImageUrl, new LockScreenDownloadedListener());
-		}
 
 		/* Uncomment to subscribe to vehicle data
 		List<PermissionItem> permissions = notification.getPermissionItem();
@@ -684,6 +679,13 @@ public class SdlService extends Service implements IProxyListenerALM{
 	public void onOnSystemRequest(OnSystemRequest notification) {
         Log.i(TAG, "OnSystemRequest notification from SDL: " + notification);
 
+		// Download the lockscreen icon Core desires
+		if(notification.getRequestType().equals(RequestType.LOCK_SCREEN_ICON_URL) && lockScreenUrlFromCore == null){
+			lockScreenUrlFromCore = notification.getUrl();
+			if(lockScreenUrlFromCore != null && lockScreenManager.getLockScreenIcon() == null){
+				lockScreenManager.downloadLockScreenIcon(lockScreenUrlFromCore, new LockScreenDownloadedListener());
+			}
+		}
 	}
 
 	@Override
