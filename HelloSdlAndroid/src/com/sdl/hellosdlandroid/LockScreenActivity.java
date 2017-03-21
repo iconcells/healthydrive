@@ -4,8 +4,10 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
+import android.widget.ImageView;
 
 import com.smartdevicelink.proxy.rpc.enums.LockScreenStatus;
 
@@ -27,6 +29,9 @@ public class LockScreenActivity extends Activity {
     private static ActivityLifecycleCallbacks ACTIVITY_LIFECYCLE_CALLBACK;
     // This will hold the instance of the application object
     private static Application APPLICATION;
+    // This will hold the bitmap to update the lockscreen image
+    static Bitmap lockscreenIcon = null;
+
 
     static {
         ACTIVITY_RUNNING = false;
@@ -50,6 +55,12 @@ public class LockScreenActivity extends Activity {
                         ACTIVITY_RUNNING = true;
                         // recall this method so the lock screen comes up when necessary
                         updateLockScreenStatus(LOCKSCREEN_STATUS);
+
+                        ImageView lockscreenIV = (ImageView) activity.findViewById(R.id.lockscreen);
+                        if(lockscreenIcon != null && lockscreenIV != null) {
+                            lockscreenIV.setImageBitmap(lockscreenIcon);
+                            lockscreenIcon = null;
+                        }
                     }
 
                     @Override
@@ -59,6 +70,7 @@ public class LockScreenActivity extends Activity {
 
                     @Override
                     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+
                     }
 
                     @Override
@@ -108,6 +120,10 @@ public class LockScreenActivity extends Activity {
                 APPLICATION.startActivity(intent);
             }
         }
+    }
+
+    public static void updateLockScreenImage(Bitmap icon){
+        lockscreenIcon = icon;
     }
 
     @Override

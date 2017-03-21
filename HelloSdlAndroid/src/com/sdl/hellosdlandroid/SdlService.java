@@ -1,19 +1,16 @@
 package com.sdl.hellosdlandroid;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.IBinder;
 import android.util.Log;
 
 import com.smartdevicelink.exception.SdlException;
+import com.smartdevicelink.proxy.LockScreenManager;
 import com.smartdevicelink.proxy.RPCRequest;
+import com.smartdevicelink.proxy.RPCResponse;
 import com.smartdevicelink.proxy.SdlProxyALM;
 import com.smartdevicelink.proxy.callbacks.OnServiceEnded;
 import com.smartdevicelink.proxy.callbacks.OnServiceNACKed;
@@ -35,6 +32,8 @@ import com.smartdevicelink.proxy.rpc.EndAudioPassThruResponse;
 import com.smartdevicelink.proxy.rpc.GenericResponse;
 import com.smartdevicelink.proxy.rpc.GetDTCsResponse;
 import com.smartdevicelink.proxy.rpc.GetVehicleDataResponse;
+import com.smartdevicelink.proxy.rpc.GetWayPointsResponse;
+import com.smartdevicelink.proxy.rpc.Image;
 import com.smartdevicelink.proxy.rpc.ListFiles;
 import com.smartdevicelink.proxy.rpc.ListFilesResponse;
 import com.smartdevicelink.proxy.rpc.MenuParams;
@@ -54,6 +53,7 @@ import com.smartdevicelink.proxy.rpc.OnSystemRequest;
 import com.smartdevicelink.proxy.rpc.OnTBTClientState;
 import com.smartdevicelink.proxy.rpc.OnTouchEvent;
 import com.smartdevicelink.proxy.rpc.OnVehicleData;
+import com.smartdevicelink.proxy.rpc.OnWayPointChange;
 import com.smartdevicelink.proxy.rpc.PerformAudioPassThruResponse;
 import com.smartdevicelink.proxy.rpc.PerformInteractionResponse;
 import com.smartdevicelink.proxy.rpc.PutFile;
@@ -73,18 +73,30 @@ import com.smartdevicelink.proxy.rpc.SpeakResponse;
 import com.smartdevicelink.proxy.rpc.StreamRPCResponse;
 import com.smartdevicelink.proxy.rpc.SubscribeButtonResponse;
 import com.smartdevicelink.proxy.rpc.SubscribeVehicleDataResponse;
+import com.smartdevicelink.proxy.rpc.SubscribeWayPointsResponse;
 import com.smartdevicelink.proxy.rpc.SystemRequestResponse;
 import com.smartdevicelink.proxy.rpc.UnsubscribeButtonResponse;
 import com.smartdevicelink.proxy.rpc.UnsubscribeVehicleDataResponse;
+import com.smartdevicelink.proxy.rpc.UnsubscribeWayPointsResponse;
 import com.smartdevicelink.proxy.rpc.UpdateTurnListResponse;
 import com.smartdevicelink.proxy.rpc.enums.FileType;
 import com.smartdevicelink.proxy.rpc.enums.HMILevel;
+import com.smartdevicelink.proxy.rpc.enums.ImageType;
 import com.smartdevicelink.proxy.rpc.enums.LockScreenStatus;
+import com.smartdevicelink.proxy.rpc.enums.RequestType;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
+import com.smartdevicelink.proxy.rpc.listeners.OnRPCResponseListener;
 import com.smartdevicelink.transport.MultiplexTransportConfig;
 import com.smartdevicelink.transport.TransportConstants;
 import com.smartdevicelink.util.CorrelationIdGenerator;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class SdlService extends Service implements IProxyListenerALM{
 
@@ -94,6 +106,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	private static final String APP_ID 					= "8675309";
 	
 	private static final String ICON_FILENAME 			= "hello_sdl_icon.png";
+	private static final String SDL_IMAGE_FILENAME  	= "sdl_full_image.png";
 	private int iconCorrelationId;
 
 	List<String> remoteFiles;
@@ -109,9 +122,10 @@ public class SdlService extends Service implements IProxyListenerALM{
 
 	private boolean firstNonHmiNone = true;
 	private boolean isVehicleDataSubscribed = false;
-	
-	
-	
+
+	private String lockScreenUrlFromCore = null;
+	private LockScreenManager lockScreenManager = new LockScreenManager();
+
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
@@ -183,7 +197,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	 */
 	public void showTest(){
 		try {
-			proxy.show(TEST_COMMAND_NAME, "Command has been selected", TextAlignment.CENTERED, CorrelationIdGenerator.generateId());			
+			proxy.show(TEST_COMMAND_NAME, "Command has been selected", TextAlignment.CENTERED, CorrelationIdGenerator.generateId());
 			proxy.speak(TEST_COMMAND_NAME, CorrelationIdGenerator.generateId());
 		} catch (SdlException e) {
 			e.printStackTrace();
@@ -222,7 +236,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	 */
 	private void sendIcon() throws SdlException {
 		iconCorrelationId = CorrelationIdGenerator.generateId();
-		uploadImage(R.drawable.ic_launcher, ICON_FILENAME, iconCorrelationId, true);
+		uploadImage(R.mipmap.ic_launcher, ICON_FILENAME, iconCorrelationId, true);
 	}
 	
 	/**
@@ -266,7 +280,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 			}
 			return os.toByteArray();
 		} catch (IOException e) {
-			Log.w("SDL Service", "Can't read icon file", e);
+			Log.w(TAG, "Can't read icon file", e);
 			return null;
 		} finally {
 			if (is != null) {
@@ -310,14 +324,37 @@ public class SdlService extends Service implements IProxyListenerALM{
 		}
 		
 	}
+
+	/**
+	 * Listener for handling when a lockscreen image is downloaded.
+	 */
+	private class LockScreenDownloadedListener implements LockScreenManager.OnLockScreenIconDownloadedListener{
+
+		@Override
+		public void onLockScreenIconDownloaded(Bitmap icon) {
+			Log.i(TAG, "Lock screen icon downloaded successfully");
+			LockScreenActivity.updateLockScreenImage(icon);
+		}
+
+		@Override
+		public void onLockScreenIconDownloadError(Exception e) {
+			Log.e(TAG, "Couldn't download lock screen icon, resorting to default.");
+			LockScreenActivity.updateLockScreenImage(BitmapFactory.decodeResource(getResources(),
+					R.drawable.sdl));
+		}
+	}
 	
 	/**
 	 * Will show a sample welcome message on screen as well as speak a sample welcome message
 	 */
 	private void performWelcomeMessage(){
 		try {
+			Image image = new Image();
+			image.setValue(SDL_IMAGE_FILENAME);
+			image.setImageType(ImageType.DYNAMIC);
+
 			//Set the welcome message on screen
-			proxy.show(APP_NAME, WELCOME_SHOW, TextAlignment.CENTERED, CorrelationIdGenerator.generateId());
+			proxy.show(APP_NAME, WELCOME_SHOW, null, null, null, null, null, image, null, null, TextAlignment.CENTERED, CorrelationIdGenerator.generateId());
 			
 			//Say the welcome message
 			proxy.speak(WELCOME_SPEAK, CorrelationIdGenerator.generateId());
@@ -333,33 +370,45 @@ public class SdlService extends Service implements IProxyListenerALM{
 	 */
 	private void uploadImages(){
 		ListFiles listFiles = new ListFiles();
+		listFiles.setOnRPCResponseListener(new OnRPCResponseListener() {
+			@Override
+			public void onResponse(int correlationId, RPCResponse response) {
+				if(response.getSuccess()){
+					remoteFiles = ((ListFilesResponse) response).getFilenames();
+				}
+
+				// Check the mutable set for the AppIcon
+				// If not present, upload the image
+				if(remoteFiles== null || !remoteFiles.contains(SdlService.ICON_FILENAME)){
+					try {
+						sendIcon();
+					} catch (SdlException e) {
+						e.printStackTrace();
+					}
+				}else{
+					// If the file is already present, send the SetAppIcon request
+					try {
+						proxy.setappicon(ICON_FILENAME, CorrelationIdGenerator.generateId());
+					} catch (SdlException e) {
+						e.printStackTrace();
+					}
+				}
+
+				// Check the mutable set for the SDL image
+				// If not present, upload the image
+				if(remoteFiles== null || !remoteFiles.contains(SdlService.SDL_IMAGE_FILENAME)){
+					uploadImage(R.drawable.sdl, SDL_IMAGE_FILENAME, CorrelationIdGenerator.generateId(), true);
+				}else{
+					// If the file is already present, do nothing
+				}
+			}
+		});
 		this.sendRpcRequest(listFiles);
-		
 	}
 
 	@Override
 	public void onListFilesResponse(ListFilesResponse response) {
 		Log.i(TAG, "onListFilesResponse from SDL ");
-		if(response.getSuccess()){
-			remoteFiles = response.getFilenames();
-		}
-		
-		// Check the mutable set for the AppIcon
-	    // If not present, upload the image
-		if(remoteFiles== null || !remoteFiles.contains(SdlService.ICON_FILENAME)){
-			try {
-				sendIcon();
-			} catch (SdlException e) {
-				e.printStackTrace();
-			}
-		}else{
-			// If the file is already present, send the SetAppIcon request
-			try {
-				proxy.setappicon(ICON_FILENAME, CorrelationIdGenerator.generateId());
-			} catch (SdlException e) {
-				e.printStackTrace();
-			}
-		}
 	}
 
 	@Override
@@ -409,6 +458,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	@Override
 	public void onOnPermissionsChange(OnPermissionsChange notification) {
 		Log.i(TAG, "Permision changed: " + notification);
+
 		/* Uncomment to subscribe to vehicle data
 		List<PermissionItem> permissions = notification.getPermissionItem();
 		for(PermissionItem permission:permissions){
@@ -629,6 +679,13 @@ public class SdlService extends Service implements IProxyListenerALM{
 	public void onOnSystemRequest(OnSystemRequest notification) {
         Log.i(TAG, "OnSystemRequest notification from SDL: " + notification);
 
+		// Download the lockscreen icon Core desires
+		if(notification.getRequestType().equals(RequestType.LOCK_SCREEN_ICON_URL) && lockScreenUrlFromCore == null){
+			lockScreenUrlFromCore = notification.getUrl();
+			if(lockScreenUrlFromCore != null && lockScreenManager.getLockScreenIcon() == null){
+				lockScreenManager.downloadLockScreenIcon(lockScreenUrlFromCore, new LockScreenDownloadedListener());
+			}
+		}
 	}
 
 	@Override
@@ -711,7 +768,27 @@ public class SdlService extends Service implements IProxyListenerALM{
 	public void onServiceDataACK(int dataSize) {
 
 	}
-	
+
+	@Override
+	public void onGetWayPointsResponse(GetWayPointsResponse response) {
+		Log.i(TAG, "GetWayPoints response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
+	}
+
+	@Override
+	public void onSubscribeWayPointsResponse(SubscribeWayPointsResponse response) {
+		Log.i(TAG, "SubscribeWayPoints response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
+	}
+
+	@Override
+	public void onUnsubscribeWayPointsResponse(UnsubscribeWayPointsResponse response) {
+		Log.i(TAG, "UnsubscribeWayPoints response from SDL: " + response.getResultCode().name() + " Info: " + response.getInfo());
+	}
+
+	@Override
+	public void onOnWayPointChange(OnWayPointChange notification) {
+		Log.i(TAG, "OnWayPointChange notification from SDL: " + notification);
+	}
+
 	@Override
 	public void onOnDriverDistraction(OnDriverDistraction notification) {
 		// Some RPCs (depending on region) cannot be sent when driver distraction is active.
