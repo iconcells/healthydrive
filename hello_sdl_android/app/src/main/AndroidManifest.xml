@@ -34,10 +34,10 @@
 
         <service android:name="com.sdl.hellosdlandroid.SdlService" >
         </service>
- 		<service
+        <service
             android:name="com.sdl.hellosdlandroid.SdlRouterService"
-            android:exported="true" 
-             android:process="com.smartdevicelink.router">
+            android:exported="true"
+            android:process="com.smartdevicelink.router">
         </service>
         <receiver android:name="com.sdl.hellosdlandroid.SdlReceiver" >
             <intent-filter>

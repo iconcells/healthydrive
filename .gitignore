@@ -8,11 +8,9 @@ lint.xml
 proguard-project.txt
 
 # Android Studio
-*.gradle
 .idea/
 *.iml
 build/
-gradle*
 local.properties
 
 # OSX garbage
