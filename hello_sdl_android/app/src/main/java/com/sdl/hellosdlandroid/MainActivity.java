@@ -19,10 +19,6 @@ public class MainActivity extends AppCompatActivity {
 		setContentView(R.layout.activity_main);
 		//If we are connected to a module we want to start our SdlService
 		SdlReceiver.queryForConnectedService(this);
-
-		// Start the SDLService (IF USING EMULATOR, NOT BT)
-        /*Intent sdlServiceIntent = new Intent(this, SdlService.class);
-        startService(sdlServiceIntent);*/
 	}
 
 	@Override

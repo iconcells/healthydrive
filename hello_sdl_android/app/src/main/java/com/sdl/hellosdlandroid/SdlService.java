@@ -110,10 +110,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 	private static final String SDL_IMAGE_FILENAME  	= "sdl_full_image.png";
 	private int iconCorrelationId;
 
-	//CORE - Only if using TCP
-	private static final String CORE_IP = "192.168.1.207";
-	private static final int CORE_PORT = 12345;
-
 	List<String> remoteFiles;
 	
 	private static final String WELCOME_SHOW 			= "Welcome to HelloSDL";
@@ -168,8 +164,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 			try {
                 Log.i(TAG, "Starting SDL Proxy");
 				proxy = new SdlProxyALM(this, APP_NAME, true, APP_ID,new MultiplexTransportConfig(getBaseContext(), APP_ID));
-				// USE TCP FOR EMULATOR (no BlueTooth)
-				//proxy = new SdlProxyALM(this,APP_NAME, true, APP_ID ,new TCPTransportConfig(CORE_PORT, CORE_IP, false));
+
 			} catch (SdlException e) {
 				e.printStackTrace();
 				// error creating proxy, returned proxy = null
