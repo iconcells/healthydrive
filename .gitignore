@@ -5,6 +5,8 @@ build/
 /captures
 .externalNativeBuild
 gradlew.bat
+hello_sdl_android/sdl_android/src/test/
+hello_sdl_android/sdl_android/src/androidTest/
 
 ##############################
 # OS generated files 
