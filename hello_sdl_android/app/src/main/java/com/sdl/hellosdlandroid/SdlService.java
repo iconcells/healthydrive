@@ -88,7 +88,6 @@ import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
 import com.smartdevicelink.proxy.rpc.listeners.OnRPCResponseListener;
 import com.smartdevicelink.transport.MultiplexTransportConfig;
-import com.smartdevicelink.transport.TCPTransportConfig;
 import com.smartdevicelink.transport.TransportConstants;
 import com.smartdevicelink.util.CorrelationIdGenerator;
 
@@ -104,7 +103,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	private static final String TAG 					= "SDL Service";
 
 	private static final String APP_NAME 				= "Hello Sdl";
-	private static final String APP_ID 					= "86753809";
+	private static final String APP_ID 					= "8675309";
 	
 	private static final String ICON_FILENAME 			= "hello_sdl_icon.png";
 	private static final String SDL_IMAGE_FILENAME  	= "sdl_full_image.png";
