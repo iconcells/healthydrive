@@ -4,6 +4,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.hardware.usb.UsbAccessory;
+import android.hardware.usb.UsbManager;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -12,6 +14,7 @@ import com.smartdevicelink.proxy.LockScreenManager;
 import com.smartdevicelink.proxy.RPCRequest;
 import com.smartdevicelink.proxy.RPCResponse;
 import com.smartdevicelink.proxy.SdlProxyALM;
+import com.smartdevicelink.proxy.TTSChunkFactory;
 import com.smartdevicelink.proxy.callbacks.OnServiceEnded;
 import com.smartdevicelink.proxy.callbacks.OnServiceNACKed;
 import com.smartdevicelink.proxy.interfaces.IProxyListenerALM;
@@ -54,6 +57,7 @@ import com.smartdevicelink.proxy.rpc.OnTBTClientState;
 import com.smartdevicelink.proxy.rpc.OnTouchEvent;
 import com.smartdevicelink.proxy.rpc.OnVehicleData;
 import com.smartdevicelink.proxy.rpc.OnWayPointChange;
+import com.smartdevicelink.proxy.rpc.PerformAudioPassThru;
 import com.smartdevicelink.proxy.rpc.PerformAudioPassThruResponse;
 import com.smartdevicelink.proxy.rpc.PerformInteractionResponse;
 import com.smartdevicelink.proxy.rpc.PutFile;
@@ -79,16 +83,23 @@ import com.smartdevicelink.proxy.rpc.UnsubscribeButtonResponse;
 import com.smartdevicelink.proxy.rpc.UnsubscribeVehicleDataResponse;
 import com.smartdevicelink.proxy.rpc.UnsubscribeWayPointsResponse;
 import com.smartdevicelink.proxy.rpc.UpdateTurnListResponse;
+import com.smartdevicelink.proxy.rpc.enums.AudioType;
+import com.smartdevicelink.proxy.rpc.enums.BitsPerSample;
 import com.smartdevicelink.proxy.rpc.enums.FileType;
 import com.smartdevicelink.proxy.rpc.enums.HMILevel;
 import com.smartdevicelink.proxy.rpc.enums.ImageType;
 import com.smartdevicelink.proxy.rpc.enums.LockScreenStatus;
 import com.smartdevicelink.proxy.rpc.enums.RequestType;
+import com.smartdevicelink.proxy.rpc.enums.SamplingRate;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
 import com.smartdevicelink.proxy.rpc.listeners.OnRPCResponseListener;
+import com.smartdevicelink.transport.BTTransportConfig;
+import com.smartdevicelink.transport.BaseTransportConfig;
 import com.smartdevicelink.transport.MultiplexTransportConfig;
+import com.smartdevicelink.transport.TCPTransportConfig;
 import com.smartdevicelink.transport.TransportConstants;
+import com.smartdevicelink.transport.USBTransportConfig;
 import com.smartdevicelink.util.CorrelationIdGenerator;
 
 import java.io.ByteArrayOutputStream;
@@ -116,6 +127,11 @@ public class SdlService extends Service implements IProxyListenerALM{
 	
 	private static final String TEST_COMMAND_NAME 		= "Test Command";
 	private static final int TEST_COMMAND_ID 			= 1;
+	private static final int APT_COMMAND_ID 			= 2;
+
+	// TCP/IP transport config
+	private static final int TCP_PORT = 12345;
+	private static final String DEV_MACHINE_IP_ADDRESS = "192.168.1.78";
 
 	// variable to create and call functions of the SyncProxy
 	private SdlProxyALM proxy = null;
@@ -142,7 +158,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		//Check if this was started with a flag to force a transport connect
 		boolean forced = intent !=null && intent.getBooleanExtra(TransportConstants.FORCE_TRANSPORT_CONNECTED, false);
-        startProxy(forced);
+        startProxy(forced, intent);
 
 		return START_STICKY;
 	}
@@ -157,13 +173,42 @@ public class SdlService extends Service implements IProxyListenerALM{
 		return proxy;
 	}
 
-	public void startProxy(boolean forceConnect) {
+	public void startProxy(boolean forceConnect, Intent intent) {
         Log.i(TAG, "Trying to start proxy");
 		if (proxy == null) {
 			try {
                 Log.i(TAG, "Starting SDL Proxy");
-				proxy = new SdlProxyALM(this, APP_NAME, true, APP_ID,new MultiplexTransportConfig(getBaseContext(), APP_ID));
-
+				BaseTransportConfig transport = null;
+				if(BuildConfig.TRANSPORT.equals("MBT")){
+					int securityLevel;
+					if(BuildConfig.SECURITY.equals("HIGH")){
+						securityLevel = MultiplexTransportConfig.FLAG_MULTI_SECURITY_HIGH;
+					}else if(BuildConfig.SECURITY.equals("MED")){
+						securityLevel = MultiplexTransportConfig.FLAG_MULTI_SECURITY_MED;
+					}else if(BuildConfig.SECURITY.equals("LOW")){
+						securityLevel = MultiplexTransportConfig.FLAG_MULTI_SECURITY_LOW;
+					}else{
+						securityLevel = MultiplexTransportConfig.FLAG_MULTI_SECURITY_OFF;
+					}
+					transport = new MultiplexTransportConfig(this, APP_ID, securityLevel);
+				}else if(BuildConfig.TRANSPORT.equals("LBT")){
+					transport = new BTTransportConfig();
+				}else if(BuildConfig.TRANSPORT.equals("TCP")){
+					transport = new TCPTransportConfig(TCP_PORT, DEV_MACHINE_IP_ADDRESS, true);
+				}else if(BuildConfig.TRANSPORT.equals("USB")) {
+					if (intent != null && intent.hasExtra(UsbManager.EXTRA_ACCESSORY)) { //If we want to support USB transport
+						if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.HONEYCOMB) {
+							Log.e(TAG, "Unable to start proxy. Android OS version is too low");
+							return;
+						}
+						//We have a usb transport
+						transport = new USBTransportConfig(getBaseContext(), (UsbAccessory) intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY));
+						Log.d(TAG, "USB created.");
+					}
+				}
+				if(transport != null) {
+					proxy = new SdlProxyALM(this, APP_NAME, true, APP_ID, transport);
+				}
 			} catch (SdlException e) {
 				e.printStackTrace();
 				// error creating proxy, returned proxy = null
@@ -217,6 +262,14 @@ public class SdlService extends Service implements IProxyListenerALM{
 		command.setMenuParams(params);
 		command.setVrCommands(Arrays.asList(new String[]{TEST_COMMAND_NAME}));
 		sendRpcRequest(command);
+
+		AddCommand aptCommand = new AddCommand();
+		params = new MenuParams();
+		params.setMenuName("TestAPT");
+		aptCommand.setCmdID(APT_COMMAND_ID);
+		aptCommand.setMenuParams(params);
+		aptCommand.setVrCommands(Arrays.asList(new String[]{"TestAPT"}));
+		sendRpcRequest(aptCommand);
 	}
 
 	/**
@@ -435,9 +488,24 @@ public class SdlService extends Service implements IProxyListenerALM{
 		Integer id = notification.getCmdID();
 		if(id != null){
 			switch(id){
-			case TEST_COMMAND_ID:
-				showTest();
-				break;
+				case TEST_COMMAND_ID:
+					showTest();
+					break;
+				case APT_COMMAND_ID:
+					PerformAudioPassThru performAPT = new PerformAudioPassThru();
+					performAPT.setAudioPassThruDisplayText1("Test APT");
+					performAPT.setAudioPassThruDisplayText2("Speak for 5 seconds.");
+
+					performAPT.setInitialPrompt(TTSChunkFactory
+							.createSimpleTTSChunks("Testing APT"));
+					performAPT.setSamplingRate(SamplingRate._22KHZ);
+					performAPT.setMaxDuration(5000);
+					performAPT.setBitsPerSample(BitsPerSample._16_BIT);
+					performAPT.setAudioType(AudioType.PCM);
+					performAPT.setMuteAudio(false);
+
+					sendRpcRequest(performAPT);
+					break;
 			}
 			//onAddCommandClicked(id);
 		}
@@ -623,8 +691,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 
 	@Override
 	public void onOnAudioPassThru(OnAudioPassThru notification) {
-        Log.i(TAG, "OnAudioPassThru notification from SDL: " + notification );
-
+		Log.i(TAG, "AudioPassThru data:" + notification.getAPTData());
 	}
 
 	@Override

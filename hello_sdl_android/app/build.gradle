@@ -17,6 +17,36 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    productFlavors{
+        mbt_high {
+            buildConfigField 'String', 'TRANSPORT', '"MBT"'
+            buildConfigField 'String', 'SECURITY', '"HIGH"'
+        }
+        mbt_med {
+            buildConfigField 'String', 'TRANSPORT', '"MBT"'
+            buildConfigField 'String', 'SECURITY', '"MED"'
+        }
+        mbt_low {
+            buildConfigField 'String', 'TRANSPORT', '"MBT"'
+            buildConfigField 'String', 'SECURITY', '"LOW"'
+        }
+        mbt_off {
+            buildConfigField 'String', 'TRANSPORT', '"MBT"'
+            buildConfigField 'String', 'SECURITY', '"OFF"'
+        }
+        lbt {
+            buildConfigField 'String', 'TRANSPORT', '"LBT"'
+            buildConfigField 'String', 'SECURITY', '"OFF"'
+        }
+        tcp {
+            buildConfigField 'String', 'TRANSPORT', '"TCP"'
+            buildConfigField 'String', 'SECURITY', '"OFF"'
+        }
+        usb {
+            buildConfigField 'String', 'TRANSPORT', '"USB"'
+            buildConfigField 'String', 'SECURITY', '"OFF"'
+        }
+    }
 }
 
 dependencies {

@@ -12,6 +12,11 @@ public class SdlApplication extends Application{
         super.onCreate();
 
         LockScreenActivity.registerActivityLifecycle(this);
+
+        if(BuildConfig.TRANSPORT.equals("TCP")) {
+            Intent proxyIntent = new Intent(this, SdlService.class);
+            startService(proxyIntent);
+        }
     }
 
 }
