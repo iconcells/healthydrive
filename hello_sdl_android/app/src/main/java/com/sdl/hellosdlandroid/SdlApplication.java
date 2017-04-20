@@ -1,7 +1,6 @@
 package com.sdl.hellosdlandroid;
 
 import android.app.Application;
-import android.content.Intent;
 
 public class SdlApplication extends Application{
 
@@ -12,11 +11,7 @@ public class SdlApplication extends Application{
         super.onCreate();
 
         LockScreenActivity.registerActivityLifecycle(this);
-
-        if(BuildConfig.TRANSPORT.equals("TCP")) {
-            Intent proxyIntent = new Intent(this, SdlService.class);
-            startService(proxyIntent);
-        }
+        LockScreenActivity.registerActivityLifecycle(this);
     }
 
 }

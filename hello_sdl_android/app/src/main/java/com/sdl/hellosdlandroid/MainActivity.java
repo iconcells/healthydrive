@@ -1,14 +1,10 @@
 package com.sdl.hellosdlandroid;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
-import com.smartdevicelink.transport.SdlRouterStatusProvider;
 
 public class MainActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
@@ -18,7 +14,12 @@ public class MainActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		//If we are connected to a module we want to start our SdlService
-		SdlReceiver.queryForConnectedService(this);
+		if(BuildConfig.TRANSPORT.equals("MBT")) {
+			SdlReceiver.queryForConnectedService(this);
+		}else if(BuildConfig.TRANSPORT.equals("TCP") || BuildConfig.TRANSPORT.equals("LBT")) {
+			Intent proxyIntent = new Intent(this, SdlService.class);
+			startService(proxyIntent);
+		}
 	}
 
 	@Override
