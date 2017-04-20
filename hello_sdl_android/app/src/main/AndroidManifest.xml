@@ -9,6 +9,9 @@
     <!-- Required to check if WiFi is enabled -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Required to use the USB Accessory mode -->
+    <uses-feature android:name="android.hardware.usb.accessory" />
+
     <uses-sdk
         android:minSdkVersion="8"
         android:targetSdkVersion="21" />
@@ -32,6 +35,17 @@
         <activity
             android:name=".LockScreenActivity"/>
 
+        <activity android:name="com.smartdevicelink.transport.USBAccessoryAttachmentActivity"
+                  android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
+                android:resource="@xml/accessory_filter" />
+        </activity>
+
         <service android:name="com.sdl.hellosdlandroid.SdlService" >
         </service>
         <service
@@ -41,6 +55,7 @@
         </service>
         <receiver android:name="com.sdl.hellosdlandroid.SdlReceiver" >
             <intent-filter>
+                <action android:name="com.smartdevicelink.USB_ACCESSORY_ATTACHED"/> <!--For AOA -->
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
                 <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />

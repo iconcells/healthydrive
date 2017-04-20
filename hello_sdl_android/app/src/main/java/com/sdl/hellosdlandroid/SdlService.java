@@ -4,6 +4,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.hardware.usb.UsbAccessory;
+import android.hardware.usb.UsbManager;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -87,8 +89,12 @@ import com.smartdevicelink.proxy.rpc.enums.RequestType;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
 import com.smartdevicelink.proxy.rpc.listeners.OnRPCResponseListener;
+import com.smartdevicelink.transport.BTTransportConfig;
+import com.smartdevicelink.transport.BaseTransportConfig;
 import com.smartdevicelink.transport.MultiplexTransportConfig;
+import com.smartdevicelink.transport.TCPTransportConfig;
 import com.smartdevicelink.transport.TransportConstants;
+import com.smartdevicelink.transport.USBTransportConfig;
 import com.smartdevicelink.util.CorrelationIdGenerator;
 
 import java.io.ByteArrayOutputStream;
@@ -117,6 +123,10 @@ public class SdlService extends Service implements IProxyListenerALM{
 	private static final String TEST_COMMAND_NAME 		= "Test Command";
 	private static final int TEST_COMMAND_ID 			= 1;
 
+	// TCP/IP transport config
+	private static final int TCP_PORT = 12345;
+	private static final String DEV_MACHINE_IP_ADDRESS = "192.168.1.78";
+
 	// variable to create and call functions of the SyncProxy
 	private SdlProxyALM proxy = null;
 
@@ -142,7 +152,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		//Check if this was started with a flag to force a transport connect
 		boolean forced = intent !=null && intent.getBooleanExtra(TransportConstants.FORCE_TRANSPORT_CONNECTED, false);
-        startProxy(forced);
+        startProxy(forced, intent);
 
 		return START_STICKY;
 	}
@@ -157,13 +167,42 @@ public class SdlService extends Service implements IProxyListenerALM{
 		return proxy;
 	}
 
-	public void startProxy(boolean forceConnect) {
+	public void startProxy(boolean forceConnect, Intent intent) {
         Log.i(TAG, "Trying to start proxy");
 		if (proxy == null) {
 			try {
                 Log.i(TAG, "Starting SDL Proxy");
-				proxy = new SdlProxyALM(this, APP_NAME, true, APP_ID,new MultiplexTransportConfig(getBaseContext(), APP_ID));
-
+				BaseTransportConfig transport = null;
+				if(BuildConfig.TRANSPORT.equals("MBT")){
+					int securityLevel;
+					if(BuildConfig.SECURITY.equals("HIGH")){
+						securityLevel = MultiplexTransportConfig.FLAG_MULTI_SECURITY_HIGH;
+					}else if(BuildConfig.SECURITY.equals("MED")){
+						securityLevel = MultiplexTransportConfig.FLAG_MULTI_SECURITY_MED;
+					}else if(BuildConfig.SECURITY.equals("LOW")){
+						securityLevel = MultiplexTransportConfig.FLAG_MULTI_SECURITY_LOW;
+					}else{
+						securityLevel = MultiplexTransportConfig.FLAG_MULTI_SECURITY_OFF;
+					}
+					transport = new MultiplexTransportConfig(this, APP_ID, securityLevel);
+				}else if(BuildConfig.TRANSPORT.equals("LBT")){
+					transport = new BTTransportConfig();
+				}else if(BuildConfig.TRANSPORT.equals("TCP")){
+					transport = new TCPTransportConfig(TCP_PORT, DEV_MACHINE_IP_ADDRESS, true);
+				}else if(BuildConfig.TRANSPORT.equals("USB")) {
+					if (intent != null && intent.hasExtra(UsbManager.EXTRA_ACCESSORY)) { //If we want to support USB transport
+						if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.HONEYCOMB) {
+							Log.e(TAG, "Unable to start proxy. Android OS version is too low");
+							return;
+						}
+						//We have a usb transport
+						transport = new USBTransportConfig(getBaseContext(), (UsbAccessory) intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY));
+						Log.d(TAG, "USB created.");
+					}
+				}
+				if(transport != null) {
+					proxy = new SdlProxyALM(this, APP_NAME, true, APP_ID, transport);
+				}
 			} catch (SdlException e) {
 				e.printStackTrace();
 				// error creating proxy, returned proxy = null
@@ -435,9 +474,9 @@ public class SdlService extends Service implements IProxyListenerALM{
 		Integer id = notification.getCmdID();
 		if(id != null){
 			switch(id){
-			case TEST_COMMAND_ID:
-				showTest();
-				break;
+				case TEST_COMMAND_ID:
+					showTest();
+					break;
 			}
 			//onAddCommandClicked(id);
 		}
@@ -623,8 +662,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 
 	@Override
 	public void onOnAudioPassThru(OnAudioPassThru notification) {
-        Log.i(TAG, "OnAudioPassThru notification from SDL: " + notification );
-
+		Log.i(TAG, "OnAudioPassThru notification from SDL: " + notification );
 	}
 
 	@Override
