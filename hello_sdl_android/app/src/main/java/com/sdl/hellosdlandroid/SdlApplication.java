@@ -11,7 +11,6 @@ public class SdlApplication extends Application{
         super.onCreate();
 
         LockScreenActivity.registerActivityLifecycle(this);
-        LockScreenActivity.registerActivityLifecycle(this);
     }
 
 }
