@@ -14,7 +14,6 @@ import com.smartdevicelink.proxy.LockScreenManager;
 import com.smartdevicelink.proxy.RPCRequest;
 import com.smartdevicelink.proxy.RPCResponse;
 import com.smartdevicelink.proxy.SdlProxyALM;
-import com.smartdevicelink.proxy.TTSChunkFactory;
 import com.smartdevicelink.proxy.callbacks.OnServiceEnded;
 import com.smartdevicelink.proxy.callbacks.OnServiceNACKed;
 import com.smartdevicelink.proxy.interfaces.IProxyListenerALM;
@@ -57,7 +56,6 @@ import com.smartdevicelink.proxy.rpc.OnTBTClientState;
 import com.smartdevicelink.proxy.rpc.OnTouchEvent;
 import com.smartdevicelink.proxy.rpc.OnVehicleData;
 import com.smartdevicelink.proxy.rpc.OnWayPointChange;
-import com.smartdevicelink.proxy.rpc.PerformAudioPassThru;
 import com.smartdevicelink.proxy.rpc.PerformAudioPassThruResponse;
 import com.smartdevicelink.proxy.rpc.PerformInteractionResponse;
 import com.smartdevicelink.proxy.rpc.PutFile;
@@ -83,14 +81,11 @@ import com.smartdevicelink.proxy.rpc.UnsubscribeButtonResponse;
 import com.smartdevicelink.proxy.rpc.UnsubscribeVehicleDataResponse;
 import com.smartdevicelink.proxy.rpc.UnsubscribeWayPointsResponse;
 import com.smartdevicelink.proxy.rpc.UpdateTurnListResponse;
-import com.smartdevicelink.proxy.rpc.enums.AudioType;
-import com.smartdevicelink.proxy.rpc.enums.BitsPerSample;
 import com.smartdevicelink.proxy.rpc.enums.FileType;
 import com.smartdevicelink.proxy.rpc.enums.HMILevel;
 import com.smartdevicelink.proxy.rpc.enums.ImageType;
 import com.smartdevicelink.proxy.rpc.enums.LockScreenStatus;
 import com.smartdevicelink.proxy.rpc.enums.RequestType;
-import com.smartdevicelink.proxy.rpc.enums.SamplingRate;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
 import com.smartdevicelink.proxy.rpc.listeners.OnRPCResponseListener;
@@ -127,7 +122,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 	
 	private static final String TEST_COMMAND_NAME 		= "Test Command";
 	private static final int TEST_COMMAND_ID 			= 1;
-	private static final int APT_COMMAND_ID 			= 2;
 
 	// TCP/IP transport config
 	private static final int TCP_PORT = 12345;
@@ -262,14 +256,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 		command.setMenuParams(params);
 		command.setVrCommands(Arrays.asList(new String[]{TEST_COMMAND_NAME}));
 		sendRpcRequest(command);
-
-		AddCommand aptCommand = new AddCommand();
-		params = new MenuParams();
-		params.setMenuName("TestAPT");
-		aptCommand.setCmdID(APT_COMMAND_ID);
-		aptCommand.setMenuParams(params);
-		aptCommand.setVrCommands(Arrays.asList(new String[]{"TestAPT"}));
-		sendRpcRequest(aptCommand);
 	}
 
 	/**
@@ -491,21 +477,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 				case TEST_COMMAND_ID:
 					showTest();
 					break;
-				case APT_COMMAND_ID:
-					PerformAudioPassThru performAPT = new PerformAudioPassThru();
-					performAPT.setAudioPassThruDisplayText1("Test APT");
-					performAPT.setAudioPassThruDisplayText2("Speak for 5 seconds.");
-
-					performAPT.setInitialPrompt(TTSChunkFactory
-							.createSimpleTTSChunks("Testing APT"));
-					performAPT.setSamplingRate(SamplingRate._22KHZ);
-					performAPT.setMaxDuration(5000);
-					performAPT.setBitsPerSample(BitsPerSample._16_BIT);
-					performAPT.setAudioType(AudioType.PCM);
-					performAPT.setMuteAudio(false);
-
-					sendRpcRequest(performAPT);
-					break;
 			}
 			//onAddCommandClicked(id);
 		}
@@ -691,7 +662,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 
 	@Override
 	public void onOnAudioPassThru(OnAudioPassThru notification) {
-		Log.i(TAG, "AudioPassThru data:" + notification.getAPTData());
+		Log.i(TAG, "OnAudioPassThru notification from SDL: " + notification );
 	}
 
 	@Override
