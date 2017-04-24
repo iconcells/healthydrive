@@ -1,11 +1,14 @@
 package com.sdl.hellosdlandroid;
 
+import android.annotation.TargetApi;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -333,11 +336,14 @@ public class SdlService extends Service implements IProxyListenerALM{
 		}
 	}
 
+	@TargetApi(Build.VERSION_CODES.M)
 	@Override
 	public void onProxyClosed(String info, Exception e, SdlDisconnectedReason reason) {
 		stopSelf();
 		if(reason.equals(SdlDisconnectedReason.LANGUAGE_CHANGE) && BuildConfig.TRANSPORT.equals("MBT")){
-			Intent intent = new Intent(SdlReceiver.ACTION_LANGUAGE_CHANGED);
+			Intent intent = new Intent(TransportConstants.START_ROUTER_SERVICE_ACTION);
+			intent.putExtra(TransportConstants.START_ROUTER_SERVICE_SDL_ENABLED_EXTRA, true);
+			intent.putExtra(TransportConstants.START_ROUTER_SERVICE_SDL_ENABLED_CMP_NAME, ComponentName.createRelative(this.getPackageName(), this.getPackageName()+".SdlRouterService"));
 			sendBroadcast(intent);
 		}
 	}

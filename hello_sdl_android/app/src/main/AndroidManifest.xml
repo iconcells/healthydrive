@@ -55,7 +55,6 @@
         </service>
         <receiver android:name="com.sdl.hellosdlandroid.SdlReceiver" >
             <intent-filter>
-                <action android:name="ACTION_LANGUAGE_CHANGED"/> <!--For Language change-->
                 <action android:name="com.smartdevicelink.USB_ACCESSORY_ATTACHED"/> <!--For AOA -->
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
