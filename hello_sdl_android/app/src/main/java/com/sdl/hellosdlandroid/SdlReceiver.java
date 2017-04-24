@@ -15,8 +15,8 @@ public class SdlReceiver  extends SdlBroadcastReceiver {
 		Log.d(TAG, "SDL Enabled");
 		intent.setClass(context, SdlService.class);
 		context.startService(intent);
-		
 	}
+
 	@Override
 	public Class<? extends SdlRouterService> defineLocalSdlRouterClass() {
 		return com.sdl.hellosdlandroid.SdlRouterService.class;
