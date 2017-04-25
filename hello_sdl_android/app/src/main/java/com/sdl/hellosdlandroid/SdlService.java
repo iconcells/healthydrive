@@ -1,13 +1,11 @@
 package com.sdl.hellosdlandroid;
 
-import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
-import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -335,7 +333,6 @@ public class SdlService extends Service implements IProxyListenerALM{
 		}
 	}
 
-	@TargetApi(Build.VERSION_CODES.M)
 	@Override
 	public void onProxyClosed(String info, Exception e, SdlDisconnectedReason reason) {
 		stopSelf();

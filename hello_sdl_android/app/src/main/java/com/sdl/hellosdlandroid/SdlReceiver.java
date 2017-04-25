@@ -29,10 +29,8 @@ public class SdlReceiver  extends SdlBroadcastReceiver {
 		super.onReceive(context, intent); // Required if overriding this method
 
 		if(intent.getAction().equalsIgnoreCase(TransportConstants.START_ROUTER_SERVICE_ACTION)){
-			if(intent.hasExtra(RECONNECT_LANG_CHANGE)){
-				if (intent.getBooleanExtra(RECONNECT_LANG_CHANGE, false)) {
-					onSdlEnabled(context, intent);
-				}
+			if (intent.getBooleanExtra(RECONNECT_LANG_CHANGE, false)) {
+				onSdlEnabled(context, intent);
 			}
 		}
 	}
