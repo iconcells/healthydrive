@@ -2,7 +2,6 @@ package com.sdl.hellosdlandroid;
 
 import android.annotation.TargetApi;
 import android.app.Service;
-import android.content.ComponentName;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -342,8 +341,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 		stopSelf();
 		if(reason.equals(SdlDisconnectedReason.LANGUAGE_CHANGE) && BuildConfig.TRANSPORT.equals("MBT")){
 			Intent intent = new Intent(TransportConstants.START_ROUTER_SERVICE_ACTION);
-			intent.putExtra(TransportConstants.START_ROUTER_SERVICE_SDL_ENABLED_EXTRA, true);
-			intent.putExtra(TransportConstants.START_ROUTER_SERVICE_SDL_ENABLED_CMP_NAME, ComponentName.createRelative(this.getPackageName(), this.getPackageName()+".SdlRouterService"));
+			intent.putExtra(SdlReceiver.RECONNECT_LANG_CHANGE, true);
 			sendBroadcast(intent);
 		}
 	}
