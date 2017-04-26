@@ -1,19 +1,67 @@
-.settings/
+##############################
+# Project Specific
+##############################
+build/
+/captures
+.externalNativeBuild
+gradlew.bat
+hello_sdl_android/sdl_android/src/test/
+hello_sdl_android/sdl_android/src/androidTest/
+
+##############################
+# OS generated files 
+##############################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+##############################
+# built application files
+##############################
+*.apk
+*.ap_
+
+##############################
+# files for the dex VM
+##############################
+*.dex
+
+##############################
+# Java class files
+##############################
+*.class
+
+##############################
+# Generated files
+##############################
 bin/
 gen/
-project.properties
-.classpath
-.project
-lint.xml
-proguard-project.txt
 
-# Android Studio
-*.gradle
-.idea/
-*.iml
-build/
-gradle*
+##############################
+# Local configuration file
+##############################
 local.properties
 
-# OSX garbage
-.DS_Store
+##############################
+# Eclipse project files
+##############################
+.classpath
+.project
+
+##############################
+# Proguard folder (Eclipse)
+##############################
+proguard/
+
+##############################
+# Intellij project files
+##############################
+*.iml
+*.ipr
+*.iws
+.idea/
+.gradle
