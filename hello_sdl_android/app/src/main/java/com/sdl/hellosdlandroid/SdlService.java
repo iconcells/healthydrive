@@ -33,6 +33,7 @@ import com.smartdevicelink.proxy.rpc.DialNumberResponse;
 import com.smartdevicelink.proxy.rpc.EndAudioPassThruResponse;
 import com.smartdevicelink.proxy.rpc.GenericResponse;
 import com.smartdevicelink.proxy.rpc.GetDTCsResponse;
+import com.smartdevicelink.proxy.rpc.GetVehicleData;
 import com.smartdevicelink.proxy.rpc.GetVehicleDataResponse;
 import com.smartdevicelink.proxy.rpc.GetWayPointsResponse;
 import com.smartdevicelink.proxy.rpc.Image;
@@ -63,6 +64,7 @@ import com.smartdevicelink.proxy.rpc.PutFileResponse;
 import com.smartdevicelink.proxy.rpc.ReadDIDResponse;
 import com.smartdevicelink.proxy.rpc.ResetGlobalPropertiesResponse;
 import com.smartdevicelink.proxy.rpc.ScrollableMessageResponse;
+import com.smartdevicelink.proxy.rpc.SendLocation;
 import com.smartdevicelink.proxy.rpc.SendLocationResponse;
 import com.smartdevicelink.proxy.rpc.SetAppIconResponse;
 import com.smartdevicelink.proxy.rpc.SetDisplayLayoutResponse;
@@ -85,6 +87,7 @@ import com.smartdevicelink.proxy.rpc.enums.FileType;
 import com.smartdevicelink.proxy.rpc.enums.HMILevel;
 import com.smartdevicelink.proxy.rpc.enums.ImageType;
 import com.smartdevicelink.proxy.rpc.enums.LockScreenStatus;
+import com.smartdevicelink.proxy.rpc.enums.PRNDL;
 import com.smartdevicelink.proxy.rpc.enums.RequestType;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
@@ -102,13 +105,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
+
+import static com.smartdevicelink.proxy.constants.Names.appID;
+import static com.smartdevicelink.proxy.constants.Names.longitudeDegrees;
+import static com.smartdevicelink.proxy.constants.Names.prndl;
+import static com.smartdevicelink.proxy.rpc.enums.TextFieldName.locationName;
 
 public class SdlService extends Service implements IProxyListenerALM{
 
 	private static final String TAG 					= "SDL Service";
 
-	private static final String APP_NAME 				= "Hello Sdl";
+	private static final String APP_NAME 				= "Healthy Drive";
 	private static final String APP_ID 					= "8675309";
 	
 	private static final String ICON_FILENAME 			= "hello_sdl_icon.png";
@@ -117,16 +127,16 @@ public class SdlService extends Service implements IProxyListenerALM{
 
 	List<String> remoteFiles;
 	
-	private static final String WELCOME_SHOW 			= "Welcome to HelloSDL";
-	private static final String WELCOME_SPEAK 			= "Welcome to Hello S D L";
+	private static final String WELCOME_SHOW 			= "Welcome to Healthy Drive";
+	private static final String WELCOME_SPEAK 			= "Welcome to Healthy D R I V E";
 	
-	private static final String TEST_COMMAND_NAME 		= "Test Command";
+	private static final String TEST_COMMAND_NAME 		= "Find Hospital";
 	private static final int TEST_COMMAND_ID 			= 1;
 
 	// TCP/IP transport config
 	private static final int TCP_PORT = 12345;
-	private static final String DEV_MACHINE_IP_ADDRESS = "192.168.1.78";
-
+	//private static final String DEV_MACHINE_IP_ADDRESS = "192.168.1.78";
+	private static final String DEV_MACHINE_IP_ADDRESS = "10.0.2.2";
 	// variable to create and call functions of the SyncProxy
 	private SdlProxyALM proxy = null;
 
@@ -173,6 +183,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 			try {
                 Log.i(TAG, "Starting SDL Proxy");
 				BaseTransportConfig transport = null;
+				/**
 				if(BuildConfig.TRANSPORT.equals("MBT")){
 					int securityLevel;
 					if(BuildConfig.SECURITY.equals("HIGH")){
@@ -200,6 +211,9 @@ public class SdlService extends Service implements IProxyListenerALM{
 						Log.d(TAG, "USB created.");
 					}
 				}
+				 **/
+				transport = new TCPTransportConfig(TCP_PORT, DEV_MACHINE_IP_ADDRESS, true);
+
 				if(transport != null) {
 					proxy = new SdlProxyALM(this, APP_NAME, true, APP_ID, transport);
 				}
@@ -239,6 +253,7 @@ public class SdlService extends Service implements IProxyListenerALM{
 		try {
 			proxy.show(TEST_COMMAND_NAME, "Command has been selected", TextAlignment.CENTERED, CorrelationIdGenerator.generateId());
 			proxy.speak(TEST_COMMAND_NAME, CorrelationIdGenerator.generateId());
+
 		} catch (SdlException e) {
 			e.printStackTrace();
 		}
@@ -481,11 +496,77 @@ public class SdlService extends Service implements IProxyListenerALM{
 			switch(id){
 				case TEST_COMMAND_ID:
 					showTest();
+
+                    Log.v("KK_dev","ready to sendlocation");
+
+                    List<String> addr = new ArrayList<String>() {
+                        {
+                            add("285 Fulton St, New York, NY 10007");
+                        }
+                    };
+
+//                    Hashtable loc_info = new Hashtable<String, Object>();
+//                    loc_info.put("longitudeDegrees",-74.012224);
+//                    loc_info.put("latitudeDegrees",40.711496);
+
+                    //loc_info.put("KEY_LOCATION_NAME", "Close by hospital");
+                    //loc_info.put("KEY_ADDRESS_LINES", addr );
+
+                    SendLocation sl = new SendLocation();
+                    sl.setCorrelationID(12);
+                    sl.setLocationName("Shutter Health Hospital");
+//                    sl.setLocationName("Hospital");
+                    sl.setLatitudeDegrees(40.711496);
+                    sl.setLongitudeDegrees(-74.012224);
+                    try{
+                        proxy.sendRPCRequest(sl);
+                    } catch (SdlException e){
+                        e.printStackTrace();
+                    }
+
+                    //GetVehicleData vd = new GetVehicleData();
+
+
+                    getVechicle_data();
+                    try {
+                        Thread.sleep(20 * 1000);
+                    } catch(InterruptedException e){
+                        e.printStackTrace();
+                    }
+                    getVechicle_data();
+
+                    Log.v("KK_dev","done sendlocation" );
 					break;
 			}
 			//onAddCommandClicked(id);
 		}
 	}
+
+	public void getVechicle_data(){
+        //vechicle Data
+        GetVehicleData vdRequest = new GetVehicleData();
+        vdRequest.setPrndl(true);
+        vdRequest.setCorrelationID(CorrelationIdGenerator.generateId());
+        vdRequest.setOnRPCResponseListener(new OnRPCResponseListener() {
+            @Override
+            public void onResponse(int correlationId, RPCResponse response) {
+                if(response.getSuccess()){
+//                    PRNDL prndl = ((GetVehicleDataResponse) response).getPrndl();
+                    Double speedKmh = ((GetVehicleDataResponse) response).getSpeed();
+                    int rpm = ((GetVehicleDataResponse) response).getRpm();
+                    Log.i("KK_dev", "PRNDL status: " + "Kmh:" );
+                }else{
+                    Log.i("KK_dev", "GetVehicleData was rejected.");
+                }
+            }
+        });
+        try {
+            proxy.sendRPCRequest(vdRequest);
+        } catch (SdlException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 	/**
 	 *  Callback method that runs when the add command response is received from SDL.
