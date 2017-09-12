@@ -1,1 +1,1 @@
-# healthy_Drive_sdl_android
+# Healthy Drive App for Smart Drive Link SDL (android)
